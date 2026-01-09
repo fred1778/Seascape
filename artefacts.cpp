@@ -8,9 +8,12 @@
 #include <algorithm>
 #include <fstream>
 #include <ctime>
+#include <tuple>
+#include "datautils.h"
 
 
 using namespace std;
+
 
 
 /*CREATE TABLE artefacts (
@@ -33,6 +36,11 @@ enum Timeframes {
     DAY, MONTH, YEAR, SPAN
 };
 
+// put in seperate data util file i
+
+
+
+
 class Artefact {
 public:
   string seacode;
@@ -42,30 +50,16 @@ public:
   string desc;
   int rubicon;
   string eventID;
-   string type;
-    string flags;
-    Timeframes timeframe;
-Artefact(string sc, int kd, Forms f, string n, string d, int r, string e, string t, string fl){
-   
+  string type;
+  string flags;
+  Timeframes timeframe;
+ Artefact(string sc, int kd, Forms f, string n, string d, int r, string e, string t, string fl){
    // Derive dt struct from time int and set timeframe 
    
-   if(kd <= 99){
-    timeframe = YEAR;
-    keyDate.tm_year = kd + 1900 + (kd < 96 ? 100 : 0); // range is 1996 to 
-   } else {
+   tuple<struct tm, Timeframes> dtTuple = transformFlexiDateInt(kd);
+    keyDate = get<0>(dtTuple);
+    timeframe = get<1>(dtTuple);
 
-    // yr/mo same calculation whether day or month timeframe
-    keyDate.tm_year = (kd % 100) + (kd < 96 ? 100 : 0);
-    keyDate.tm_mon = (kd / 100) -1;
-
-    if(kd < 10000){
-    timeframe = MONTH;
-
-   } else{
-    timeframe = DAY;
-    keyDate.tm_mday = (kd / 10000);
-   }
-}
     seacode = sc;
     form = f;
     name = n;
