@@ -1,3 +1,4 @@
 *.pdf
+*.db
 staging/manifest.txt
 staging/events.txt
