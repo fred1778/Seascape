@@ -239,7 +239,7 @@ int main(int argc, char** argv){
 
     process_artefact_file();
 
-    const char * dbFileName = "seascape_a.db";
+    const char * dbFileName = "../seascape_a.db";
   
     sqlite3 *sscDb;
     sqlite3_open(dbFileName, &sscDb);
