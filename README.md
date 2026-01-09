@@ -1,11 +1,33 @@
 # Seascape
-## Command-line archive management system build on top of SQLite
+## Command-line archive management system build on top of SQLite (WIP)
 
 ![1920px-Winslow_Homer_-_Sunlight_on_the_Coast_-_Google_Art_Project](https://github.com/user-attachments/assets/606b55cb-7897-4bf7-86c0-c81d516dcb5d)
+A Seascape - *Sunlight on the Coast*, Winslow Homer, 1890
+
 
 ---
+Seascape stands for **State, Event, Aretefact** - the three interaltting domains that together paint a picture of life. It is useful foundation point for building archives, something I've always ffound alluring. The Seascape tools in this repo provide a command-line interface for interacting with a Seascape archive database - essentially a SQLite database with a table for each of the three types of entities (state, event, artefact). It comprises a C++ program which ingests easy-to-write commands, and transforms these in to SQL queries using `sqlite3` C/C++ library to interact with the `seascape.db`. This program is supported by bash scripts that enable the archivist to collect artefacts as PDFs, list them in a text file, and perform bulk updates to create new entries linked via their identifier to PDFs in the `/archive` directory. 
 
-Seascape stands for **State, Event, Aretefact** - the three interaltting domains that together paint a picture of life. It is useful foundation point for building archives, something I've always ffound alluring. The Seascape tools in this repo provide a command-line interface for interacting with a Seascape archive database - essentially a SQLite database with a table for each of the three types of entities (state, event, artefact). It compriaes a C++ program which ingests easy-to-write commands, and transforms these in to SQL queries using `sqlite3` C/C++ library to interact with the `seascape.db`. This program is supported by bash scripts that enable the archivist to collect artefacts as PDFs, list them in a text file, and perform bulk updates to create new entries linked via their identifier to PDFs in the `/archive` directory. 
+Seascape is designed to minimise overhead and maximise portability - in my implementation, I use a 4GB Raspberry Pi 5 with a 1 TB SSD to store the database and archived material and run Seascape on the standard raspi os Linux distro. This provides a scalable foundatrion for using Seascape to drive a local (or public) server for interacting with the archive.
+
+
+
+## SEA Taxonomy
+The below table summaries the database fields used in the Seascape schema and command input. Several fields are shared across two or all of the different tables. The associated C++ objects created to represent entities transform and expand upon some of these attributes to aid querying, for instance, keyDate is transormed into a `struct tm` structure and a `timeframe` property to indicate the intended precision of the date (day, month, year).
+
+| Field | Type in DB | Description | Scope |
+|-------|------|-------------|-------|
+|`seacode`| Text | **Primary Key** Unique identifer assigned to every entity across domains, prefixed with the domain (S,E,A) and the type code, e.g. A11 -> 'Artefact, ocassion inbound' (birtdhay cards, etc.)|S,E,A|
+|`keyDate`| Integer | A 1 to 6 digit integer representing the 'key date' for the entity in a flexible DDMMYY form, depending on how many digits are provided: '96' refers to simply 1996, '496' translates to 'April 1996', '120496' refers to 12th April 1996. As the command is initially handled as a string, users can pad with zeros to make their inputs more readable (e.g. 000596 instead of the underlying integer value, 596). In my implenetation, designed to archive my life, I impose a 'Y2k96' limitation on my archive in which 96 will be interpreted as 1996, 0 maps to 2000, and 95 maps to 2095. Other implementations could easily have four digits for the year to avoid the 99-year cap.|A|
+|`form`| Text | An indicator to represent the form of an artefact - can be adpated but currently used to identify physical artefacts (P) and digital artefacts (D), as this has ramifications for how an artefact is handled |A|
+|`type`| Text | A two-digit identifier for the category of the entity relative to its domain. Flexible in how this can be implemented but typical approach would be, for instance, 1x = correspondence such that 11 is cards, 12 is letters, etc. | S, E, A |
+|`name`| Text | A short name for the entity - e.g. *Birthday card from X* or *Holiday to Y* |S, E, A|
+|`desc`| Text | A description for the entity - e.g. *Card includes reference to Y and depcits image of X* |S, E, A|
+|`rubicon`| Integer | A value representing the confidentially of the archive, 1 being public, and up to 3 (at present). Useful for informing permissions for files and controlling different users' level of access|S, E, A|
+|`eventID`| Text | A foreign key to associate an entity with a specific event - for example, birthday cards for a 12th birthday are assoicated with the ID for the 'twelth birthday' event. |A|
+|`location`| Text | The location of a physical artefact | A |
+
+
 
 
 
