@@ -1,11 +1,11 @@
 COMP = g++
-CFLAGS = -Wall
+CFLAGS = -Wall -fsanitize=address -Og -g 
 TARG = seascape
 SRCS = interpreter.cpp schemas.h datautils.h datautils.cpp
 
 all: $(TARG) run
 $(TARG): $(SRCS)
-	$(COMP) $(CFLAGS) -o $(TARG) $(SRCS) -l sqlite3
+	$(COMP) -o $(TARG) $(SRCS) -l sqlite3
 run:
 	./$(TARG)
 

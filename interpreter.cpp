@@ -7,27 +7,47 @@
 #include <filesystem>
 #include <algorithm>
 #include <fstream>
-
-#define ART_COLS 9
-#define UNDEFINED "99"
-#define EVENT_TYPE_INDEX 4
-using namespace std;
+#include "datautils.h"
+#include "schemas.h"
+#include <vector>
+#include <array>
 
 using namespace filesystem;
+using namespace std;
 
-enum CommandTypes {
-  INSERT, UPDATE, QUERY
-};
-enum Domains {
-  ARTIFACT,
-  EVENT,
-  STATE
-};
 
 map<string, string> artf_types = {{"23", "TRAVEL DOC"}, {"04", "MD VISUAL ART"}, {"02", "MD DOC"}, {"22", "EVENT DOC"}, {"21", "IDENTITY DOC"}, {"25", "OFFICAL DOC"}, {"26", "GEN DOCS"}, {"11", "OCCASION INB"}, {"12", "CORRESPONDENCE INB"}, {"13", "GENERAL EXT"}, {"09", "NOTES"}, {"31", "EXAM ANS"}};
 map<string, string> event_types = {{"11", "BIRTH"}, {"12", "CAL BDAY"}, {"13", "CAL XMAS"}, {"14", "CAL VAL"}, {"21", "FAMHOL"}, {"22", "FAMTRIP"}, {"23", "ITRAV"}, {"24", "ITRIP"}, {"25", "EDUTRIP"}, {"26", "WRKTRVL"}};
+string qa_cmd[5] = {"ofevent", "istrue", "isfalse", "after", "before"};
+string qa_cmd_sql[] = {" event = ", "", "", " keyDate >", " keyDate <"};
+
 
 path stagingDir{"staging"};
+
+
+
+//static Artefact results[100];
+
+
+int sql_exec_callback(void *data, int argc, char **argv, char **azColName){
+  // Build Artefact objects from query results and store in results array
+
+  /*cout << "CALLBACK\n";
+  cout << argv[0] << '\n';*/
+
+
+  static int results_count = 0;
+  int date = atoi(argv[1]);
+  Forms form = (argv[2][0] == 'P' ? PHYS : DIGI);
+  int runicon = atoi(argv[5]);
+  Artefact art = Artefact(argv[0], date, form, argv[3], argv[4], runicon, argv[6], argv[7], argv[8]);
+  cout << art.seacode << "  |   " << art.name << "  |  " << art.desc << "  |  " << art.type << "\n";
+
+ return 0;
+}
+
+
+
 
 bool process_artefact_file(){
 
@@ -96,13 +116,42 @@ IE/./000000/999999/23/TESTEV/TEST EV DSC/1/LOC/X
   flags TEXT
 )*/
 
+
+
 string dataQueryBuilder(string input, int seq){
+  static QA_CMDS cmd;
   string token;
+  // QA/ofevent/E123456...
+  // QA/istrue/FIELD/VALUE
+  // QA/isfalse/FIELD/VALUE
+  // QA/after/dateInt
+  // QA/before/dateInt
 
 
-  return "d";
+if(seq == 1){
+  for(int i = 0; i < qa_cmd->length(); i++){
+    if(input == qa_cmd[i]){
+      cmd = static_cast<QA_CMDS>(i);
+      // use cmd val to look up string to append
+      return qa_cmd_sql[i];
+    }
+  }
+if(cmd == NULL){
+  cout << "Error: Invalid QA command\n";
+  return "";
+}  
 
+} else {
+  // for seq 2, expect E val if cmd=EVENT, int if AFTER/BEFORE, else string
+  if(cmd == EV){
+    token = singleQuoteWrap(input);
+  } else {
+    token = input;
+  }
 }
+  return token;
+}
+
 string IECommandBuilder(string input, int seq, string& typecode){
   string token;
 // The code is v similar to IA 
@@ -180,6 +229,7 @@ while(getline(stream, temp, splitter)){
     }
     if(temp == "QA"){
       // QUERY ARTEFACT
+      start.append("SELECT * FROM artefacts WHERE");
       cmdType = QUERY;
       
     }
@@ -189,7 +239,7 @@ while(getline(stream, temp, splitter)){
    if(cmdType == QUERY){
      // build query command
 
-
+      start.append(dataQueryBuilder(temp, count));
 
 
    } else {
@@ -221,7 +271,10 @@ switch(domain){
 
     break;
 }
-start.append(");");
+if(cmdType != QUERY){
+  start.append(")");
+} 
+start.append(";");
 //out<< start << "\n";
 return start;
 
@@ -245,13 +298,14 @@ int main(int argc, char** argv){
     sqlite3_open(dbFileName, &sscDb);
 
    // char *tableSetup = "CREATE TABLE entities(id varchar(255), domain varchar(255), form varchar(255), rubicon int, name varchar(255), desc varchar(255), startDate varchar(255), endDate varchar(255), created int)";
-    const char *getAll = "SELECT * FROM artefacts);";
-    const char *insert = "INSERT INTO artefacts VALUES('AXX00001', 1000, 'DWS', 'testName', 'testDesc', 3, 'E00001', '23', 'X*s');";
-    string test = "IA/./080717/P/Emirates Boarding Pass/Main part of boarding pass from EK029 from Dubai to London, the final leg of the June-July 2017 Eurasian adventure/1/TBA//";
     string raw = argv[1];
     string command = renderCommand(raw);
-    //cout << command.c_str();
-    sqlite3_exec(sscDb, command.c_str(), NULL, NULL, NULL);
+   // cout << command.c_str();
+
+    char **err;
+
+    sqlite3_exec(sscDb, command.c_str(), sql_exec_callback, NULL, err);
+    //cout << "SQLite3 Error: " << (err != NULL ? *err : "None") << "\n";
     sqlite3_close(sscDb);
 
 

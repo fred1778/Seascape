@@ -35,3 +35,11 @@ tuple<struct tm, Timeframes> transformFlexiDateInt(int dateInt) {
 }
 return tuple<struct tm, Timeframes>(keyDate, timeframe);
 }
+
+
+string singleQuoteWrap(string input){
+  string output = "'";
+  output.append(input);
+  output.append("'");
+  return output;
+}
