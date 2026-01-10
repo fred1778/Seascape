@@ -16,28 +16,23 @@ using namespace std;
 
 
 
-/*CREATE TABLE artefacts (
-  seacode TEXT,
-  keyDate INTEGER,
-  form TEXT,
-  name TEXT,
-  desc TEXT,
-  rubicon INTEGER,
-  event TEXT,
-  type TEXT,
-  flags TEXT
-)*/
+#ifndef SCEHEMAS_H
+#define SCHEMAS_H
 
-enum Forms {
-    PHYS, DIGI
+
+class Event{
+    public:
+    string seacode;
+    struct tm startDate;
+    struct tm endDate;
+    string type;
+    string name;
+    string desc;
+    int rubicon;
+    string location;
+    string agents;
+
 };
-
-enum Timeframes {
-    DAY, MONTH, YEAR, SPAN
-};
-
-// put in seperate data util file i
-
 
 
 
@@ -71,3 +66,7 @@ public:
   }
 
 };
+
+
+
+#endif
