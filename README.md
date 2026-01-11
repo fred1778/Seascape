@@ -6,7 +6,7 @@ A Seascape - *Sunlight on the Coast*, Winslow Homer, 1890
 
 
 ---
-Seascape stands for **State, Event, Aretefact** - the three interaltting domains that together paint a picture of life. It is useful foundation point for building archives, something I've always ffound alluring. The Seascape tools in this repo provide a command-line interface for interacting with a Seascape archive database - essentially a SQLite database with a table for each of the three types of entities (state, event, artefact). It comprises a C++ program which ingests easy-to-write commands, and transforms these in to SQL queries using `sqlite3` C/C++ library to interact with the `seascape.db`. This program is supported by bash scripts that enable the archivist to collect artefacts as PDFs, list them in a text file, and perform bulk updates to create new entries linked via their identifier to PDFs in the `/archive` directory. 
+Seascape stands for **State, Event, Aretefact** - the three interaltting domains that together paint a picture of life. It is useful foundation point for building archives, something I've always ffound alluring. The Seascape tools in this repo provide a command-line interface for interacting with a Seascape archive database - essentially a SQLite database with a table for each of the three types of entities (state, event, artefact). It comprises a C++ program which ingests easy-to-write commands, and transforms these in to SQL queries using `sqlite3` C/C++ library to interact with the `seascape.db`. This program is supported by shell scripts that enable the archivist to collect artefacts as PDFs, list them in a text file, and perform bulk updates to create new entries linked via their identifier to PDFs in the `/archive` directory. 
 
 Seascape is designed to minimise overhead and maximise portability - in my implementation, I use a 4GB Raspberry Pi 5 with a 1 TB SSD to store the database and archived material and run Seascape on the standard raspi os Linux distro. This provides a scalable foundatrion for using Seascape to drive a local (or public) server for interacting with the archive.
 
@@ -26,6 +26,36 @@ The below table summaries the database fields used in the Seascape schema and co
 |`rubicon`| Integer | A value representing the confidentially of the archive, 1 being public, and up to 3 (at present). Useful for informing permissions for files and controlling different users' level of access|S, E, A|
 |`eventID`| Text | A foreign key to associate an entity with a specific event - for example, birthday cards for a 12th birthday are assoicated with the ID for the 'twelth birthday' event. |A|
 |`location`| Text | The location of a physical artefact | A |
+
+
+## Using Seascape
+
+
+The executable takes one arguement - a command to be executed. Commands are structured as follows:
+
+`opcode/cmdpart/cmdpart/..`
+
+For example, to insert a new artefact, use the `IA` (insert artefact) opcode followed by the values for the fields seperated by `/`, for example:
+
+`IA/./000315/D/Essay on Humanism/Essay written for week 3 of term on the topic of Humanism in the Renaissance/1/X/31/X`
+
+The use of `/./` means 'delegate the population of this field to the program'. Currently, as above, this is used to instruct the program to generate a valid `seacode` for this new entity. The use of `X` indicates that this field is not applicable.
+
+The scripts `evgo` (event go) and `argo` (artefact go) provide a conveinient way to bulk add events and artefacts respectivley by simply listing commands in a text file (`manidfest.txt` or `events.txt`). For artefacts, the script will use the program output for each command (which if succesful will be the new entry's `seacode`) to rename the top `.pdf` file in `/staging` directory to the new seacode, and move it in to the `\archive` directory. This means that an archivist can scan artefacts and record their data in a simple text file and then simply submit these to the Seascape together.
+
+### Querying
+
+Seascpae uses a set of commands that represent common archive-based queries. Query commands are specified by Q-type opcodes (e.g. `QA` for artefact queries). Each query opcode has a set of built-in queries for common tasks, for instance:
+
+`QA/ofevent` - get all artefacts the relate to the following event seacode, for example `QA/ofevent/E123456`. This maps to the SQL command `SELECT * FROM artefacts WHERE event=E123456`.
+
+
+
+
+
+
+
+
 
 
 
