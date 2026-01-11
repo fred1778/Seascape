@@ -7,34 +7,43 @@
 #include <filesystem>
 #include <algorithm>
 #include <fstream>
-#include "datautils.h"
-#include "schemas.h"
 #include <vector>
 #include <array>
+
+
+#include "interpreter.h"
+#include "datautils.h"
+#include "schemas.h"
+
 
 using namespace filesystem;
 using namespace std;
 
+int main(int argc, char** argv){
 
-map<string, string> artf_types = {{"23", "TRAVEL DOC"}, {"04", "MD VISUAL ART"}, {"02", "MD DOC"}, {"22", "EVENT DOC"}, {"21", "IDENTITY DOC"}, {"25", "OFFICAL DOC"}, {"26", "GEN DOCS"}, {"11", "OCCASION INB"}, {"12", "CORRESPONDENCE INB"}, {"13", "GENERAL EXT"}, {"09", "NOTES"}, {"31", "EXAM ANS"}};
-map<string, string> event_types = {{"11", "BIRTH"}, {"12", "CAL BDAY"}, {"13", "CAL XMAS"}, {"14", "CAL VAL"}, {"21", "FAMHOL"}, {"22", "FAMTRIP"}, {"23", "ITRAV"}, {"24", "ITRIP"}, {"25", "EDUTRIP"}, {"26", "WRKTRVL"}};
-string qa_cmd[5] = {"ofevent", "istrue", "isfalse", "after", "before"};
-string qa_cmd_sql[] = {" event = ", "", "", " keyDate >", " keyDate <"};
+  if(argc == 1){
+    return 0;
+  }
+    const char * dbFileName = "../seascape_a.db";
+  
+    sqlite3 *sscDb;
+    sqlite3_open(dbFileName, &sscDb);
+    string raw = argv[1];
+    string command = renderCommand(raw);
+    char **err;
+    sqlite3_exec(sscDb, command.c_str(), sql_exec_callback, NULL, err);
+    cout << "SQLite3 Error: " << (err != NULL ? *err : "None") << "\n";
+    sqlite3_close(sscDb);
 
 
-path stagingDir{"staging"};
+return 0;
 
 
+}
 
-//static Artefact results[100];
 
 
 int sql_exec_callback(void *data, int argc, char **argv, char **azColName){
-  // Build Artefact objects from query results and store in results array
-
-  /*cout << "CALLBACK\n";
-  cout << argv[0] << '\n';*/
-
 
   static int results_count = 0;
   int date = atoi(argv[1]);
@@ -47,22 +56,6 @@ int sql_exec_callback(void *data, int argc, char **argv, char **azColName){
 }
 
 
-
-
-bool process_artefact_file(){
-
-for(const auto &entry : directory_iterator("staging")){
-  //cout << entry.path().filename().string() << '\n';
-
-}
-
- return true;
-
-}
-
-bool eventArtefactsGet(string eventCode){
-return true;
-}
 string rand_number_string_gen(){
   random_device rd;
   mt19937 mt(rd());
@@ -70,6 +63,7 @@ string rand_number_string_gen(){
 
   return to_string(dist(mt));
 }
+
 string get_artf_seacode(string typecode){
   string newCode = "A";
   newCode.append(typecode);
@@ -85,36 +79,6 @@ string get_event_seacode(string typecode){
   cout << newCode;
   return newCode;
 }
-
-bool art_isstring[9] = {true, false, true, true, true, false, true, true, true};
-bool event_isstring[9] = {true, false, false, true, true, true, false, true, true};
-
-
-/*CREATE TABLE events (
-  seacode TEXT,
-  start INTEGER,
-  end INTEGER,
-  type TEXT,
-  name TEXT,
-  desc TEXT,
-  rubicon INTEGER,
-  location TEXT,
-  agents TEXT
-)
-
-IE/./000000/999999/23/TESTEV/TEST EV DSC/1/LOC/X
-*/
-/*CREATE TABLE artefacts (
-  seacode TEXT,
-  keyDate INTEGER,
-  form TEXT,
-  name TEXT,
-  desc TEXT,
-  rubicon INTEGER,
-  event TEXT,
-  type TEXT,
-  flags TEXT
-)*/
 
 
 
@@ -196,9 +160,6 @@ string IACommandBuilder(string input, int seq, string& typecode){
 
 string renderCommand(string input){
 
-  // I/./080717/P/Emirates Boarding Pass/Main part of boarding pass from EK029 from Dubai to London, the final leg of the June-July 2017 Eurasian adventure/1/TBA//
-  //IE/./080717/P/Event Name/Event Description/1/TBA//
-
 stringstream stream(input);
 string temp;
 char splitter = '/';
@@ -254,7 +215,6 @@ while(getline(stream, temp, splitter)){
    }
    }
   }
-  //cout << temp
   count++;
 }
 // replace dots with calculated vals now whole command processed
@@ -265,8 +225,7 @@ switch(domain){
 
     break;
   case EVENT:
-    // IE
-      //cout<<typecode;
+
       start.replace(dotIndex, 1, get_event_seacode(typecode));
 
     break;
@@ -275,41 +234,6 @@ if(cmdType != QUERY){
   start.append(")");
 } 
 start.append(";");
-//out<< start << "\n";
 return start;
-
-}
-
-//static int execCallback(void *data, int argc
-
-int main(int argc, char** argv){
-
-  if(argc == 1){
-    //printf("ERROR: No arguememnt provided!\n");
-    return 0;
-  }
-
-
-    process_artefact_file();
-
-    const char * dbFileName = "../seascape_a.db";
-  
-    sqlite3 *sscDb;
-    sqlite3_open(dbFileName, &sscDb);
-
-   // char *tableSetup = "CREATE TABLE entities(id varchar(255), domain varchar(255), form varchar(255), rubicon int, name varchar(255), desc varchar(255), startDate varchar(255), endDate varchar(255), created int)";
-    string raw = argv[1];
-    string command = renderCommand(raw);
-   // cout << command.c_str();
-
-    char **err;
-
-    sqlite3_exec(sscDb, command.c_str(), sql_exec_callback, NULL, err);
-    //cout << "SQLite3 Error: " << (err != NULL ? *err : "None") << "\n";
-    sqlite3_close(sscDb);
-
-
-return 0;
-
 
 }
